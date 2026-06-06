@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTokenCompressor - 智能Token压缩引擎</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-bar { transition: width 0.3s ease; }
+        .token-counter { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">🚀 SmartTokenCompressor</h1>
+                    <p class="text-lg opacity-90">高性能智能Token压缩引擎 - 为LLM应用节省60-95% API成本</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="bg-white/20 rounded-lg p-4 backdrop-blur">
+                        <div class="text-sm opacity-80">API状态</div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="font-semibold">运行中</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Section -->
+            <div class="animate-fade-in">
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">📝 输入文本</h2>
+                    
+                    <!-- Strategy Selection -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">压缩策略</label>
+                        <select id="strategy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="hybrid">🔄 混合策略（推荐）</option>
+                            <option value="semantic">🧠 语义去重</option>
+                            <option value="summarization">📋 智能摘要</option>
+                            <option value="keyword">🔑 关键词提取</option>
+                            <option value="adaptive">🎯 自适应</option>
+                        </select>
+                    </div>
+
+                    <!-- Target Ratio -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            目标压缩比: <span id="ratioValue" class="text-purple-600 font-bold">50%</span>
+                        </label>
+                        <input type="range" id="targetRatio" min="10" max="90" value="50" 
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Model Selection -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">模型类型</label>
+                        <select id="model" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="general">通用</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-3.5">GPT-3.5</option>
+                            <option value="claude">Claude</option>
+                            <option value="llama">Llama</option>
+                            <option value="gemini">Gemini</option>
+                        </select>
+                    </div>
+
+                    <!-- Text Input -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">文本内容</label>
+                        <textarea id="inputText" rows="12" 
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                  placeholder="在此输入要压缩的文本..."></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button id="compressBtn" class="flex-1 bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+                            <span>🚀</span> 开始压缩
+                        </button>
+                        <button id="clearBtn" class="px-6 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                            清空
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="animate-fade-in">
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">✨ 压缩结果</h2>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="text-sm text-blue-600 mb-1">原始Token</div>
+                            <div id="originalTokens" class="text-2xl font-bold text-blue-800 token-counter">0</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <div class="text-sm text-green-600 mb-1">压缩后Token</div>
+                            <div id="compressedTokens" class="text-2xl font-bold text-green-800 token-counter">0</div>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4">
+                            <div class="text-sm text-yellow-600 mb-1">节省Token</div>
+                            <div id="tokensSaved" class="text-2xl font-bold text-yellow-800 token-counter">0</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <div class="text-sm text-purple-600 mb-1">节省比例</div>
+                            <div id="savingsPercentage" class="text-2xl font-bold text-purple-800">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>压缩进度</span>
+                            <span id="compressionRatio">压缩比: 1.0000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="progressBar" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Compressed Text -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">压缩后的文本</label>
+                        <textarea id="outputText" rows="10" readonly
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 resize-none"
+                                  placeholder="压缩结果将显示在这里..."></textarea>
+                    </div>
+
+                    <!-- Copy Button -->
+                    <button id="copyBtn" class="w-full py-3 border border-purple-300 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
+                        <span>📋</span> 复制结果
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="mt-12">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">✨ 核心特性</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">🧠</div>
+                    <h3 class="text-xl font-bold mb-2">语义去重</h3>
+                    <p class="text-gray-600">基于BERT语义相似度，智能识别并去除冗余内容，保留核心语义。</p>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">📋</div>
+                    <h3 class="text-xl font-bold mb-2">智能摘要</h3>
+                    <p class="text-gray-600">使用TextRank算法提取关键句子，生成高质量摘要。</p>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">🔑</div>
+                    <h3 class="text-xl font-bold mb-2">关键词提取</h3>
+                    <p class="text-gray-600">基于TF-IDF算法提取关键词，保留信息密度最高的内容。</p>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">🔄</div>
+                    <h3 class="text-xl font-bold mb-2">混合策略</h3>
+                    <p class="text-gray-600">多阶段压缩流水线，结合多种算法达到最佳压缩效果。</p>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h3 class="text-xl font-bold mb-2">自适应压缩</h3>
+                    <p class="text-gray-600">根据内容类型自动选择最佳压缩策略，代码、日志、JSON各有优化。</p>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6 hover:shadow-lg transition-shadow">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h3 class="text-xl font-bold mb-2">实时处理</h3>
+                    <p class="text-gray-600">支持流式压缩，无需等待完整输入，实时返回结果。</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">🚀 SmartTokenCompressor v1.0.0</p>
+            <p class="text-gray-400 text-sm">高性能智能Token压缩引擎 - 为LLM应用节省60-95% API成本</p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const strategySelect = document.getElementById('strategy');
+        const targetRatioInput = document.getElementById('targetRatio');
+        const ratioValue = document.getElementById('ratioValue');
+        const modelSelect = document.getElementById('model');
+        const inputText = document.getElementById('inputText');
+        const compressBtn = document.getElementById('compressBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const outputText = document.getElementById('outputText');
+        const copyBtn = document.getElementById('copyBtn');
+        const originalTokens = document.getElementById('originalTokens');
+        const compressedTokens = document.getElementById('compressedTokens');
+        const tokensSaved = document.getElementById('tokensSaved');
+        const savingsPercentage = document.getElementById('savingsPercentage');
+        const compressionRatio = document.getElementById('compressionRatio');
+        const progressBar = document.getElementById('progressBar');
+
+        // Update ratio display
+        targetRatioInput.addEventListener('input', (e) => {
+            ratioValue.textContent = e.target.value + '%';
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            inputText.value = '';
+            outputText.value = '';
+            resetStats();
+        });
+
+        // Copy button
+        copyBtn.addEventListener('click', () => {
+            if (outputText.value) {
+                outputText.select();
+                document.execCommand('copy');
+                copyBtn.innerHTML = '<span>✅</span> 已复制';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<span>📋</span> 复制结果';
+                }, 2000);
+            }
+        });
+
+        // Reset stats
+        function resetStats() {
+            originalTokens.textContent = '0';
+            compressedTokens.textContent = '0';
+            tokensSaved.textContent = '0';
+            savingsPercentage.textContent = '0%';
+            compressionRatio.textContent = '压缩比: 1.0000';
+            progressBar.style.width = '0%';
+        }
+
+        // Compress button
+        compressBtn.addEventListener('click', async () => {
+            const text = inputText.value.trim();
+            if (!text) {
+                alert('请输入要压缩的文本');
+                return;
+            }
+
+            // Update button state
+            compressBtn.disabled = true;
+            compressBtn.innerHTML = '<span class="animate-spin">⏳</span> 压缩中...';
+
+            try {
+                const response = await fetch('/api/v1/compress', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        strategy: strategySelect.value,
+                        target_ratio: parseInt(targetRatioInput.value) / 100,
+                        model: modelSelect.value,
+                        preserve_structure: true,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('压缩失败');
+                }
+
+                const data = await response.json();
+
+                // Update output
+                outputText.value = data.compressed_text;
+
+                // Update stats
+                originalTokens.textContent = data.original_tokens.toLocaleString();
+                compressedTokens.textContent = data.compressed_tokens.toLocaleString();
+                tokensSaved.textContent = data.tokens_saved.toLocaleString();
+                savingsPercentage.textContent = data.savings_percentage + '%';
+                compressionRatio.textContent = `压缩比: ${data.compression_ratio}`;
+
+                // Update progress bar
+                const progress = Math.min(data.savings_percentage, 100);
+                progressBar.style.width = progress + '%';
+
+            } catch (error) {
+                alert('压缩失败: ' + error.message);
+            } finally {
+                compressBtn.disabled = false;
+                compressBtn.innerHTML = '<span>🚀</span> 开始压缩';
+            }
+        });
+
+        // Auto-resize textarea
+        inputText.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.max(this.scrollHeight, 300) + 'px';
+        });
+    </script>
+</body>
+</html>
